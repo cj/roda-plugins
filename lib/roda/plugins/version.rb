@@ -1,5 +1,3 @@
-module Roda
-  module Plugins
-    VERSION = "0.0.1"
-  end
+class Roda
+  PluginsVersion = '0.0.2'.freeze
 end

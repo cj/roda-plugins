@@ -5,7 +5,7 @@ require 'roda/plugins/version'
 
 Gem::Specification.new do |spec|
   spec.name          = "roda-plugins"
-  spec.version       = Roda::Plugins::VERSION
+  spec.version       = Roda::PluginsVersion
   spec.authors       = ["cj"]
   spec.email         = ["cjlazell@gmail.com"]
   spec.summary       = %q{Plugins for Roda.}
