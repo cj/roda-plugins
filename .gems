@@ -1,3 +1,7 @@
-roda-cj -v 0.9.6
+roda -v 1.0.0
 nokogiri -v 1.6.3.1
 cutest-cj -v 1.7.0
+tilt -v 2.0.1
+sass -v 3.4.1
+coffee-script -v 2.3.0
+therubyracer -v 0.12.1
