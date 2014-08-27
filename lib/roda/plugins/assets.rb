@@ -95,6 +95,7 @@ class Roda
         end
 
         def render_asset file, type, number
+          file.gsub!(/\.#{type}$/, '')
           asset_file = assets_opts[:"#{type}"][number.to_i]
           file       = asset_file if asset_file[file.gsub(/^#{number}\//, '')]
           path       = assets_opts[:path]
@@ -103,6 +104,7 @@ class Roda
           engine     = assets_opts[:"#{type}_engine"]
           file_path  = path + '/' + folder + '/' + file + ext
 
+          ap file
           if ext.length > 0
             tilt_class = ::Tilt[engine]
 
