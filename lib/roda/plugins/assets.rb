@@ -35,7 +35,6 @@ class Roda
         def inherited(subclass)
           super
           opts               = subclass.opts[:assets] = assets_opts.dup
-          opts[:layout_opts] = opts[:layout_opts].dup
           opts[:opts]        = opts[:opts].dup
           opts[:cache]       = thread_safe_cache if opts[:cache]
         end
