@@ -23,6 +23,7 @@ class Roda
         opts[:route]      ||= 'assets'
         opts[:css_engine] ||= 'scss'
         opts[:js_engine]  ||= 'coffee'
+        opts[:headers]    ||= {}
         opts[:cache]        = app.thread_safe_cache if opts.fetch(:cache, true)
 
         yield opts if block
@@ -90,7 +91,7 @@ class Roda
 
         # <link rel="stylesheet" href="theme.css">
         def css_assets_tag attrs
-          "<link type=\"text/css\" #{attrs}>"
+          "<link type=\"text/css\" #{attrs} />"
         end
 
         # <script src="scriptfile.js"></script>
@@ -127,12 +128,7 @@ class Roda
 
               response.headers.merge!({
                 "Content-Type"              => content_type + '; charset=UTF-8',
-                "Cache-Control"             => 'public, max-age=2592000, no-transform',
-                'Connection'                => 'keep-alive',
-                'Age'                       => '25637',
-                'Strict-Transport-Security' => 'max-age=31536000',
-                'Content-Disposition'       => 'inline'
-              })
+              }.merge(scope.assets_opts[:headers]))
 
               file, file_path = self.class.roda_class.cached_path file, type
               engine          = scope.assets_opts[:"#{type}_engine"]

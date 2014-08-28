@@ -9,7 +9,14 @@ setup do
     plugin(:assets, {
       path: './test/dummy/assets',
       css_engine: 'scss',
-      js_engine: 'coffee'
+      js_engine: 'coffee',
+      headers: {
+        "Cache-Control"             => 'public, max-age=2592000, no-transform',
+        'Connection'                => 'keep-alive',
+        'Age'                       => '25637',
+        'Strict-Transport-Security' => 'max-age=31536000',
+        'Content-Disposition'       => 'inline'
+      }
     })
 
     assets_opts[:css] = ['app']
