@@ -3,6 +3,10 @@ require "tilt"
 class Roda
   module RodaPlugins
     module Assets
+      def self.load_dependencies(app, opts={})
+        app.plugin :render
+      end
+
       def self.configure(app, opts={}, &block)
         if app.opts[:assets]
           app.opts[:assets].merge!(opts)
@@ -15,7 +19,6 @@ class Roda
         opts[:js]         ||= []
         opts[:js_folder]  ||= 'js'
         opts[:css_folder] ||= 'css'
-        opts[:img_folder] ||= 'img'
         opts[:path]       ||= File.expand_path("assets", Dir.pwd)
         opts[:route]      ||= 'assets'
         opts[:css_engine] ||= 'scss'
@@ -41,6 +44,23 @@ class Roda
         def assets_opts
           opts[:assets]
         end
+
+        def cache
+          assets_opts[:cache]
+        end
+
+        def cached_path file, type
+          cache.fetch(:path){{}}[file] ||= begin
+            path   = assets_opts[:route] + '/' + assets_opts[:"#{type}_folder"]
+            ext    = file[/(\.[a-z]{2,3})$/] ? '' : ".#{type[0]}"
+            folder = assets_opts[:"#{type}_folder"]
+
+            [
+              "/#{path}/#{file}#{ext}".gsub(/\.\.\//, ''),
+              assets_opts[:path] + '/' + folder + '/' + file
+            ]
+          end
+        end
       end
 
       module InstanceMethods
@@ -50,19 +70,18 @@ class Roda
 
         def assets type, options = {}
           attrs = options.map{|k,v| "#{k}=\"#{v}\""}
+          tags  = []
+          type  = [type] unless type.is_a? Array
+          files = type.length == 1 \
+                ? assets_opts[:"#{type[0]}"] \
+                : assets_opts[:"#{type[0]}"][:"#{type[1]}"]
 
-          tags = []
+          files.each do |file|
+            file_path, file = cached_path file, type[0]
+            attr            = type[0].to_s == 'js' ? 'src' : 'href'
 
-          assets_opts[:"#{type}"].each_with_index do |file, i|
-            path = assets_opts[:route] + '/' + assets_opts[:"#{type}_folder"]
-            ext = file[/(\.[a-z]{2,3})$/] ? '' : ".#{type}"
-            file_path = "/#{path}/#{i}/#{file}#{ext}".gsub(/\.\.\//, '')
-            if type.to_s == 'js'
-              attrs.unshift "src=\"#{file_path}\""
-            else
-              attrs.unshift "href=\"#{file_path}\""
-            end
-            tags << send("#{type}_assets_tag", attrs.join(' '))
+            attrs.unshift "#{attr}=\"#{file_path}\""
+            tags << send("#{type[0]}_assets_tag", attrs.join(' '))
           end
 
           tags.join "\n"
@@ -79,6 +98,10 @@ class Roda
         def js_assets_tag attrs
           "<script #{attrs}></script>"
         end
+
+        def cached_path *args
+          self.class.cached_path(*args)
+        end
       end
 
       module RequestClassMethods
@@ -93,59 +116,33 @@ class Roda
             )
           end
         end
-
-        def render_asset file, type, number
-          file.gsub!(/\.#{type}$/, '')
-          asset_file = assets_opts[:"#{type}"][number.to_i]
-          file       = asset_file if asset_file[file.gsub(/^#{number}\//, '')]
-          path       = assets_opts[:path]
-          folder     = assets_opts[:"#{type}_folder"]
-          ext        = file[/(\.[a-z]{2,3})$/] ? '' : ".#{engine}"
-          engine     = assets_opts[:"#{type}_engine"]
-          file_path  = path + '/' + folder + '/' + file + ext
-
-          ap file
-          if ext.length > 0
-            tilt_class = ::Tilt[engine]
-
-            cached_asset(file_path) do
-              tilt_class.new(file_path, 1)
-            end.render
-          else
-            File.read file_path
-          end
-        end
-
-        private
-
-        def cached_asset(path, &block)
-          if cache = assets_opts[:cache]
-            unless asset = cache[path]
-              asset = cache[path] = yield
-            end
-            asset
-          else
-            yield
-          end
-        end
       end
 
       module RequestMethods
         def assets
           %w(css js).each do |type|
             on self.class.public_send "#{type}_assets_path" do |file|
-              content_type = Rack::Mime.mime_type File.extname file
+              file.gsub!(/\.#{type}$/, '')
+
+              content_type = type == 'css' ? 'text/css' : 'text/javascript'
 
               response.headers.merge!({
-                "Content-Type"              => content_type,
+                "Content-Type"              => content_type + '; charset=UTF-8',
                 "Cache-Control"             => 'public, max-age=2592000, no-transform',
                 'Connection'                => 'keep-alive',
                 'Age'                       => '25637',
                 'Strict-Transport-Security' => 'max-age=31536000',
                 'Content-Disposition'       => 'inline'
               })
-              # this removes the extension
-              self.class.render_asset file, type, file.split('/').first
+
+              file, file_path = self.class.roda_class.cached_path file, type
+              engine          = scope.assets_opts[:"#{type}_engine"]
+
+              if !file[/\.#{type}$/]
+                scope.render path: "#{file_path}.#{engine}"
+              else
+                File.read file_path
+              end
             end
           end
         end

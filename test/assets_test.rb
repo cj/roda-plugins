@@ -13,14 +13,14 @@ setup do
     })
 
     assets_opts[:css] = ['app']
-    assets_opts[:js]  = ['app']
+    assets_opts[:js]  = { head: ['app'] }
 
     route do |r|
       r.assets
 
       r.is 'test' do
         response.write assets :css
-        response.write assets :js
+        response.write assets [:js, :head]
       end
     end
   end
@@ -33,8 +33,8 @@ scope 'assets' do
   end
 
   test 'middleware/render' do |app|
-    assert body('/assets/css/0/app.css')['color: red']
-    assert body('/assets/js/0/app.js')['console.log']
+    assert body('/assets/css/app.css')['color: red']
+    assert body('/assets/js/head/app.js')['console.log']
   end
 
   test 'instance_methods' do |app|
