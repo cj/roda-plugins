@@ -90,12 +90,12 @@ class Roda
 
         # <link rel="stylesheet" href="theme.css">
         def css_assets_tag attrs
-          "<link rel=\"stylesheet\" type=\"text/css\" #{attrs}>"
+          "<link type=\"text/css\" #{attrs}>"
         end
 
         # <script src="scriptfile.js"></script>
         def js_assets_tag attrs
-          "<script #{attrs}></script>"
+          "<script type=\"text/javascript\" #{attrs}></script>"
         end
 
         def cached_path *args
