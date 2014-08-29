@@ -45,12 +45,8 @@ class Roda
           opts[:assets]
         end
 
-        def cache
-          assets_opts[:cache]
-        end
-
         def cached_path file, type
-          cache.fetch(:path){{}}[file] ||= begin
+          assets_opts[:cache].fetch(:path){{}}[file] ||= begin
             path   = assets_opts[:route] + '/' + assets_opts[:"#{type}_folder"]
             ext    = file[/(\.[a-z]{2,3})$/] ? '' : ".#{type[0]}"
             folder = assets_opts[:"#{type}_folder"]
@@ -133,7 +129,7 @@ class Roda
               file, file_path = self.class.roda_class.cached_path file, type
               engine          = scope.assets_opts[:"#{type}_engine"]
 
-              if !file[/\.#{type}$/]
+              if !file_path[/\.#{type}$/]
                 scope.render path: "#{file_path}.#{engine}"
               else
                 File.read file_path

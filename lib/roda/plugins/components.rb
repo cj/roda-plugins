@@ -44,6 +44,8 @@ class Roda
           @components["_setup_#{name}"] = block
         end
 
+        private
+
         def cache
           @cache ||= begin
             c = Roda::RodaCache.new
@@ -160,7 +162,7 @@ class Roda
         end
 
         def class_cache
-          component_class.cache
+          component_class.send :cache
         end
       end
     end
