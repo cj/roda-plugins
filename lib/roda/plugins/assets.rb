@@ -35,9 +35,9 @@ class Roda
         # affecting the parent class.
         def inherited(subclass)
           super
-          opts               = subclass.opts[:assets] = assets_opts.dup
-          opts[:opts]        = opts[:opts].dup
-          opts[:cache]       = thread_safe_cache if opts[:cache]
+          opts         = subclass.opts[:assets] = assets_opts.dup
+          opts[:opts]  = opts[:opts].dup
+          opts[:cache] = thread_safe_cache if opts[:cache]
         end
 
         # Return the assets options for this class.

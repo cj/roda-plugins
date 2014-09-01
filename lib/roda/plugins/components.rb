@@ -2,24 +2,41 @@ class Roda
   module RodaPlugins
     module Components
       def self.configure(app, opts={})
-        app.instance_exec{@components ||= {}}
+        if app.opts[:components]
+          app.opts[:components].merge!(opts)
+        else
+          app.opts[:components] = opts.dup
+        end
+
+        opts                        = app.opts[:components]
+        opts[:cache]                = app.thread_safe_cache if opts.fetch(:cache, true)
+        opts[:settings]           ||= {}
+        opts[:cache][:components] ||= {}
+        opts[:cache][:events]     ||= {}
       end
 
       module ClassMethods
+        def inherited(subclass)
+          super
+          opts.merge! subclass.opts[:components]
+        end
+
+        def components_opts
+          opts[:components]
+        end
+
         def components
-          @components.keys
+          cache[:components].keys
         end
 
         def load_component name
-          @components[name]
+          cache[:components][name]
         end
 
         def component(name, events = [], &block)
-          name = name.to_s
-
-          @components[name] = block
-
-          cache[:events][name] ||= {}
+          name                       = name.to_s
+          cache[:components][name]   = block
+          cache[:events][name]     ||= {}
 
           events.each do |event|
             if event.is_a? String
@@ -37,21 +54,17 @@ class Roda
         end
 
         def load_setup_component name
-          @components["_setup_#{name}"]
+          cache[:components]["_setup_#{name}"]
         end
 
         def setup_component(name, &block)
-          @components["_setup_#{name}"] = block
+          cache[:components]["_setup_#{name}"] = block
         end
 
         private
 
         def cache
-          @cache ||= begin
-            c = Roda::RodaCache.new
-            c[:events] = {}
-            c
-          end
+          components_opts[:cache]
         end
       end
 
