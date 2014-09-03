@@ -107,7 +107,7 @@ class Roda
           name = name.to_s
 
           if name == component_opts[:call].to_s
-            throw :halt, yield
+            throw :halt, yield(component_opts[:locals] || {})
           end
         end
 
@@ -117,20 +117,20 @@ class Roda
 
         def html &block
           class_cache[:html_loaded] ||= begin
-            class_cache[:html] ||= yield
+            comp_cache[:html] ||= yield
             true
           end
         end
 
         def setup &block
           class_cache[:ran_setup] ||= begin
-            block.call class_dom, class_tmpl
+            block.call comp_dom, comp_tmpl
             true
           end
         end
 
         def dom
-          cache[:dom] ||= class_cache[:dom].dup
+          cache[:dom] ||= comp_cache[:dom].dup
         end
 
         def dom_html
@@ -138,7 +138,12 @@ class Roda
         end
 
         def tmpl name
-          (cache[:tmpl] ||= {}).fetch(name){ class_cache[:tmpl].fetch(name).dup }
+          (cache[:tmpl] ||= {}).fetch(name){ comp_tmpl.fetch(name).dup }
+        end
+
+        def set_tmpl name, value, keep = false
+          comp_tmpl[name] = value
+          value.remove unless keep
         end
 
         def trigger_events
@@ -166,17 +171,22 @@ class Roda
 
         private
 
-        def class_dom
-          class_cache[:dom] ||= Nokogiri::HTML(class_cache[:html])
+        def comp_dom
+          comp_cache[:dom] ||= Nokogiri::HTML(comp_cache[:html])
         end
 
-        def class_tmpl
-          class_cache[:tmpl] ||= {}
+        def comp_tmpl
+          comp_cache[:tmpl] ||= {}
         end
 
         def class_cache
-          component_class.send :cache
+          component_class.send(:cache)
         end
+
+        def component_cache
+          class_cache["#{component_name}_cache"] ||= {}
+        end
+        alias :comp_cache :component_cache
       end
     end
 

@@ -19,7 +19,7 @@ setup do
       }
     })
 
-    assets_opts[:css] = ['app']
+    assets_opts[:css] = ['app', '../raw.css']
     assets_opts[:js]  = { head: ['app'] }
 
     route do |r|
@@ -41,6 +41,7 @@ scope 'assets' do
 
   test 'middleware/render' do |app|
     assert body('/assets/css/app.css')['color: red']
+    assert body('/assets/css/raw.css')['color: blue']
     assert body('/assets/js/head/app.js')['console.log']
   end
 

@@ -36,7 +36,6 @@ class Roda
         def inherited(subclass)
           super
           opts         = subclass.opts[:assets] = assets_opts.dup
-          opts[:opts]  = opts[:opts].dup
           opts[:cache] = thread_safe_cache if opts[:cache]
         end
 
@@ -45,16 +44,34 @@ class Roda
           opts[:assets]
         end
 
-        def cached_path file, type
-          assets_opts[:cache].fetch(:path){{}}[file] ||= begin
-            path   = assets_opts[:route] + '/' + assets_opts[:"#{type}_folder"]
-            ext    = file[/(\.[a-z]{2,3})$/] ? '' : ".#{type[0]}"
-            folder = assets_opts[:"#{type}_folder"]
 
-            [
-              "/#{path}/#{file}#{ext}".gsub(/\.\.\//, ''),
-              assets_opts[:path] + '/' + folder + '/' + file
-            ]
+        def asset_path file, type
+          file.gsub!(/\.#{type}$/, '')
+          assets = assets_opts[:"#{type}"]
+
+          if assets.is_a? Array
+            file_path = assets.select {|a| a["#{file}"]}.first
+          else
+            file      = file.split('/')
+            sub       = file.shift.to_sym
+            file      = file.join '/'
+            file_path = assets[sub].select {|a| a["#{file}"]}.first
+
+            if file_path && !file_path[/^\.\//]
+              file_path = "#{sub}/#{file_path}"
+            end
+          end
+
+          folder = assets_opts[:"#{type}_folder"]
+
+          if file_path
+            if !file_path[/^\.\//]
+              "#{assets_opts[:path]}/#{folder}/#{file_path}"
+            else
+              file_path
+            end
+          else
+            file
           end
         end
       end
@@ -73,10 +90,13 @@ class Roda
                 : assets_opts[:"#{type[0]}"][:"#{type[1]}"]
 
           files.each do |file|
-            file_path, file = cached_path file, type[0]
-            attr            = type[0].to_s == 'js' ? 'src' : 'href'
-
-            attrs.unshift "#{attr}=\"#{file_path}\""
+            file.gsub!(/\./, '$2E')
+            file = file.split('/')
+            file[file.length - 1] = file.last.gsub(/\$2E/, '.')
+            file = file.join '/'
+            path = assets_opts[:route] + '/' + assets_opts[:"#{type[0]}_folder"]
+            attr = type[0].to_s == 'js' ? 'src' : 'href'
+            attrs.unshift "#{attr}=\"/#{path}/#{file}\""
             tags << send("#{type[0]}_assets_tag", attrs.join(' '))
           end
 
@@ -87,7 +107,7 @@ class Roda
 
         # <link rel="stylesheet" href="theme.css">
         def css_assets_tag attrs
-          "<link type=\"text/css\" #{attrs} />"
+          "<link rel=\"stylesheet\" #{attrs} />"
         end
 
         # <script src="scriptfile.js"></script>
@@ -95,8 +115,8 @@ class Roda
           "<script type=\"text/javascript\" #{attrs}></script>"
         end
 
-        def cached_path *args
-          self.class.cached_path(*args)
+        def render_asset *args
+          self.class.render_asset(*args)
         end
       end
 
@@ -118,21 +138,34 @@ class Roda
         def assets
           %w(css js).each do |type|
             on self.class.public_send "#{type}_assets_path" do |file|
-              file.gsub!(/\.#{type}$/, '')
+              file.gsub!(/\$2E/, '.')
 
-              content_type = type == 'css' ? 'text/css' : 'text/javascript'
+              content_type = Rack::Mime.mime_type File.extname(file)
 
               response.headers.merge!({
                 "Content-Type"              => content_type + '; charset=UTF-8',
               }.merge(scope.assets_opts[:headers]))
 
-              file, file_path = self.class.roda_class.cached_path file, type
-              engine          = scope.assets_opts[:"#{type}_engine"]
+              engine = scope.assets_opts[:"#{type}_engine"]
 
-              if !file_path[/\.#{type}$/]
-                scope.render path: "#{file_path}.#{engine}"
+              if !file[/^\.\//]
+                path = scope.assets_opts[:route] + '/' + scope.assets_opts[:"#{type}_folder"] + "/#{file}"
               else
-                File.read file_path
+                path = file
+              end
+
+              if File.exists? "#{path}.#{engine}"
+                scope.render path: "#{path}.#{engine}"
+              elsif File.exists? "#{path}.#{type}"
+                File.read "#{path}.#{type}"
+              elsif File.exists?(path) && path[/\.#{type}$/]
+                File.read path
+              elsif File.exists? path
+                begin
+                  scope.render path: path
+                rescue
+                  File.read path
+                end
               end
             end
           end
