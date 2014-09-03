@@ -69,10 +69,10 @@ class Roda
       end
 
       module InstanceMethods
-        def component(name, opts = {})
+        def component(name, opts = {}, &block)
           name = name.to_s
 
-          component_request = ComponentRequest.new(self, self.class, name, opts)
+          component_request = ComponentRequest.new(self, self.class, name, opts, block)
 
           content = catch :halt do
             if setup_component = self.class.load_setup_component(name)
@@ -95,12 +95,13 @@ class Roda
       class ComponentRequest
         attr_reader :app, :component_class, :component_name, :component_opts, :cache
 
-        def initialize app, component_class, component_name, opts = {}
+        def initialize app, component_class, component_name, opts = {}, block
           @app             = app
           @component_class = component_class
           @component_name  = component_name
           @component_opts  = opts
           @cache           = Roda::RodaCache.new
+          @_block          = block
         end
 
         def on name, &block
@@ -116,14 +117,14 @@ class Roda
         end
 
         def html &block
-          class_cache[:html_loaded] ||= begin
+          comp_cache[:html_loaded] ||= begin
             comp_cache[:html] ||= yield
             true
           end
         end
 
         def setup &block
-          class_cache[:ran_setup] ||= begin
+          comp_cache[:ran_setup] ||= begin
             block.call comp_dom, comp_tmpl
             true
           end
@@ -167,6 +168,10 @@ class Roda
               end
             end
           end
+        end
+
+        def block
+          @_block
         end
 
         private
