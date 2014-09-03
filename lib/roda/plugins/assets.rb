@@ -138,7 +138,7 @@ class Roda
         def assets
           %w(css js).each do |type|
             on self.class.public_send "#{type}_assets_path" do |file|
-              file.gsub!(/\$2E/, '.')
+              file.gsub!(/(\$2E|%242E)/, '.')
 
               content_type = Rack::Mime.mime_type File.extname(file)
 

@@ -1,3 +1,3 @@
 class Roda
-  PluginsVersion = '0.0.3'.freeze
+  PluginsVersion = '0.0.4'.freeze
 end
