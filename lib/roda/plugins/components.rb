@@ -86,9 +86,9 @@ class Roda
             raise "Couldn't find on method `#{opts[:call]}`, for the `#{name}` component."
           end
 
-          response.write content if content.is_a? String
-
           component_request.trigger_events
+
+          content
         end
       end
 
