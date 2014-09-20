@@ -13,7 +13,6 @@ module Minitest
     include Rack::Test::Methods
 
     class << self
-
       def app(type=nil, &block)
         case type
         when :new
@@ -28,29 +27,6 @@ module Minitest
         else
           @app ||= _app{route(&block)}
         end
-      end
-
-      def req(path='/', env={})
-        if path.is_a?(Hash)
-          env = path
-        else
-          env['PATH_INFO'] = path
-        end
-
-        env = {"REQUEST_METHOD" => "GET", "PATH_INFO" => "/", "SCRIPT_NAME" => ""}.merge(env)
-        @app.call(env)
-      end
-
-      def status(path='/', env={})
-        req(path, env)[0]
-      end
-
-      def header(name, path='/', env={})
-        req(path, env)[1][name]
-      end
-
-      def body(path='/', env={})
-        req(path, env)[2].join
       end
 
       def _app(&block)
