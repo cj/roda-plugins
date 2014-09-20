@@ -5,8 +5,8 @@ require 'tilt/sass'
 require 'tilt/coffee'
 
 describe 'assets' do
-  before do
-    @app = Kernel.app :bare do
+  def app
+    self.class.app :bare do
       plugin(:assets, {
         path: './dummy/assets',
         css_engine: 'scss',
@@ -34,13 +34,9 @@ describe 'assets' do
     end
   end
 
-  def app
-    @app
-  end
-
   it 'config' do
-    assert_equal './dummy/assets', @app.assets_opts[:path]
-    assert_includes @app.assets_opts[:css], 'app'
+    assert_equal './dummy/assets', app.assets_opts[:path]
+    assert_includes app.assets_opts[:css], 'app'
   end
 
   it 'middleware/render' do

@@ -3,7 +3,7 @@ require 'nokogiri'
 
 describe "Components" do
   def app
-    Kernel.app :bare do
+    self.class.app :bare do
       plugin :components
 
       component(:foo, ['world']) do |c|
