@@ -45,7 +45,7 @@ class Roda
         end
 
 
-        def asset_path file, type
+        def asset_path(file, type)
           file.gsub!(/\.#{type}$/, '')
           assets = assets_opts[:"#{type}"]
 
@@ -81,7 +81,7 @@ class Roda
           self.class.assets_opts
         end
 
-        def assets type, options = {}
+        def assets(type, options = {})
           attrs = options.map{|k,v| "#{k}=\"#{v}\""}
           tags  = []
           type  = [type] unless type.is_a? Array
@@ -106,16 +106,16 @@ class Roda
         private
 
         # <link rel="stylesheet" href="theme.css">
-        def css_assets_tag attrs
+        def css_assets_tag(attrs)
           "<link rel=\"stylesheet\" #{attrs} />"
         end
 
         # <script src="scriptfile.js"></script>
-        def js_assets_tag attrs
+        def js_assets_tag(attrs)
           "<script type=\"text/javascript\" #{attrs}></script>"
         end
 
-        def render_asset *args
+        def render_asset(*args)
           self.class.render_asset(*args)
         end
       end

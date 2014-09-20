@@ -29,7 +29,7 @@ class Roda
           cache[:components].keys
         end
 
-        def load_component name
+        def load_component(name)
           cache[:components][name]
         end
 
@@ -53,7 +53,7 @@ class Roda
           end
         end
 
-        def load_setup_component name
+        def load_setup_component(name)
           cache[:components]["_setup_#{name}"]
         end
 
@@ -95,7 +95,7 @@ class Roda
       class ComponentRequest
         attr_reader :app, :component_class, :component_name, :component_opts, :cache
 
-        def initialize app, component_class, component_name, opts = {}, block
+        def initialize(app, component_class, component_name, opts = {}, block)
           @app             = app
           @component_class = component_class
           @component_name  = component_name
@@ -104,7 +104,7 @@ class Roda
           @_block          = block
         end
 
-        def on name, &block
+        def on(name, &block)
           name = name.to_s
 
           if name == component_opts[:call].to_s
@@ -112,18 +112,18 @@ class Roda
           end
         end
 
-        def display &block
+        def display(&block)
           on 'display', &block
         end
 
-        def html &block
+        def html(&block)
           comp_cache[:html_loaded] ||= begin
             comp_cache[:html] ||= yield
             true
           end
         end
 
-        def setup &block
+        def setup(&block)
           comp_cache[:ran_setup] ||= begin
             block.call comp_dom, comp_tmpl
             true
@@ -138,11 +138,11 @@ class Roda
           dom.to_html
         end
 
-        def tmpl name
+        def tmpl(name)
           (cache[:tmpl] ||= {}).fetch(name){ comp_tmpl.fetch(name).dup }
         end
 
-        def set_tmpl name, value, keep = false
+        def set_tmpl(name, value, keep = false)
           comp_tmpl[name] = value
           value.remove unless keep
         end
@@ -151,7 +151,7 @@ class Roda
           trigger component_opts.dup.delete(:call), component_opts
         end
 
-        def trigger event, opts = {}
+        def trigger(event, opts = {})
           event = event.to_s
 
           if opts.key?(:for)
