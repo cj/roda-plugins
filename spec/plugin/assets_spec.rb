@@ -11,7 +11,7 @@ else
     before do
       app(:bare) do
         plugin(:assets, {
-          path: './test/dummy/assets',
+          path: './spec/dummy/assets',
           css_engine: 'scss',
           js_engine: 'coffee',
           headers: {
@@ -38,7 +38,7 @@ else
     end
 
     it 'should contain proper configuration' do
-      app.assets_opts[:path].should == './test/dummy/assets'
+      app.assets_opts[:path].should == './spec/dummy/assets'
       app.assets_opts[:css].should include('app')
     end
 
