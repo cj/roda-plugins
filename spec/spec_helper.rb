@@ -1,15 +1,10 @@
-lib = File.expand_path('../../lib', __FILE__)
-$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
+$:.unshift(File.expand_path('../lib', File.dirname(__FILE__)))
+
+require 'rubygems'
 
 require 'roda'
 
-after do
-  @app = nil
-end
-
-module Kernel
-  private
-
+module SpecHelpers
   def app(type=nil, &block)
     case type
     when :new
@@ -53,5 +48,21 @@ module Kernel
     c = Class.new(Roda)
     c.class_eval(&block)
     c
+  end
+end
+
+require 'rspec/version'
+
+if RSpec::Version::STRING >= '2.11.0'
+  RSpec.configure do |config|
+    config.expect_with :rspec do |c|
+      c.syntax = :should
+    end
+
+    config.mock_with :rspec do |c|
+      c.syntax = :should
+    end
+
+    config.include SpecHelpers
   end
 end
