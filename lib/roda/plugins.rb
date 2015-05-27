@@ -1,6 +1,6 @@
 require "roda/plugins/version"
 
-module Roda
+class Roda
   module Plugins
     # Your code goes here...
   end
